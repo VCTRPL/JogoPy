@@ -11,3 +11,8 @@ CINZA = (212,212,212)
 
 CAMINHO_RECORDE = "data/recorde.txt"
 CAMINHO_SPRITES = "assets/imagens/spritesheet.bmp"
+
+# Snakobra
+CAMINHO_RANKING = "data/ranking.txt"
+CAMINHO_MUSICA = "assets/sons/musica.ogg"
+TAMANHO_RANKING = 5

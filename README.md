@@ -1,71 +1,61 @@
-# Nome do Jogo
+# Snakobra
 
-Projeto final da disciplina de Introdução a Algoritmos/Programação, desenvolvido com Python e Pygame.
-
-Este repositório é um template para os grupos da disciplina. A proposta é começar com uma base funcional e evoluir o jogo ao longo do semestre.
+Versao do classico jogo da cobrinha desenvolvida em Python com a biblioteca Pygame.
+Projeto final da disciplina de Introducao a Algoritmos / Programacao.
 
 ## Integrantes do grupo
 
 - Victor Reis Silva de Paula
-- José Victor Uliana
+- Jose Victor Uliana
 - Kaio Vinicius Souza
 
-## Estrutura do projeto
+## Descricao do jogo
 
-- `main.py`: ponto de entrada da aplicação.
-- `src/`: código-fonte principal do jogo (loop, regras, sprites e dados).
-- `assets/`: imagens, fontes e sons.
-- `data/`: arquivos persistentes (recorde/ranking).
-- `tests/`: testes unitários com `pytest`.
-- `docs/`: documentação do projeto, incluindo proposta inicial.
+O jogador controla uma cobra que se movimenta na tela coletando comida. Cada item coletado
+aumenta o tamanho da cobra em um bloco e soma um ponto na pontuacao. O jogo termina quando
+a cobra bate na parede ou colide com o proprio corpo.
 
-## Descrição do jogo
-
-Descreva brevemente a ideia principal do jogo.
-
-Exemplo:
-
-> O jogo consiste em controlar um personagem que deve coletar moedas e evitar obstáculos. O jogador ganha pontos ao coletar itens e perde vidas ao colidir com obstáculos. A partida termina quando o tempo acaba ou quando o jogador perde todas as vidas.
+A tela exibe em tempo real a pontuacao atual, o tempo de sobrevivencia em segundos e o
+recorde absoluto salvo em arquivo. Ao final da partida e mostrado um ranking com as 5
+melhores partidas ja jogadas.
 
 ## Objetivo do jogador
 
-Explique o que o jogador precisa fazer para vencer ou avançar no jogo.
-
-Exemplo:
-
-> O objetivo é coletar a maior quantidade possível de itens antes que o tempo acabe, evitando colisões com os obstáculos.
+Sobreviver o maior tempo possivel e coletar o maximo de comida sem bater nas paredes nem
+no proprio corpo, alcancando uma pontuacao alta o suficiente para entrar no Top 5.
 
 ## Regras do jogo
 
-Liste as principais regras do jogo.
-
-Exemplo:
-
-- O jogador se movimenta usando as setas do teclado.
-- Cada item coletado aumenta a pontuação.
-- Colidir com um obstáculo reduz a quantidade de vidas.
-- A partida termina quando o jogador perde todas as vidas ou quando o tempo acaba.
+- A cobra comeca com 1 bloco e se move continuamente na direcao escolhida.
+- Cada comida coletada aumenta o comprimento em 1 e soma 1 ponto.
+- Bater na parede encerra a partida (a cobra nao tem vidas extras).
+- Bater no proprio corpo tambem encerra a partida.
+- Nao e permitido inverter a direcao atual em 180 graus.
+- O ranking guarda as 5 melhores partidas; em caso de empate na pontuacao, a partida mais
+  curta (menor tempo) fica na frente.
 
 ## Controles
 
-Informe as teclas ou comandos utilizados no jogo.
+- Seta para cima: mover a cobra para cima
+- Seta para baixo: mover a cobra para baixo
+- Seta para esquerda: mover a cobra para esquerda
+- Seta para direita: mover a cobra para direita
+- R (na tela de Game Over): jogar de novo
+- ESC (na tela de Game Over): sair do jogo
 
-Exemplo:
+## Estrutura do projeto
 
-- Seta para cima: mover para cima
-- Seta para baixo: mover para baixo
-- Seta para esquerda: mover para esquerda
-- Seta para direita: mover para direita
-- Espaço: realizar ação
-- ESC: sair do jogo
+- `main.py` - ponto de entrada da aplicacao.
+- `src/jogo.py` - loop principal do Snake, HUD, tela de Game Over.
+- `src/config.py` - constantes (tamanho da tela, cores, caminhos de arquivos).
+- `src/dados.py` - leitura e escrita do ranking em arquivo.
+- `src/funcoes.py` - funcoes utilitarias de logica.
+- `data/ranking.txt` - arquivo persistente com o Top 5.
+- `tests/` - testes automatizados com `pytest`.
 
 ## Como executar o projeto
 
-### 1. Clonar o repositório
-
 ```bash
-git clone LINK_DO_REPOSITORIO
-cd NOME_DA_PASTA
 pip install -r requirements.txt
 python main.py
 ```
@@ -76,15 +66,18 @@ python main.py
 python -m pytest
 ```
 
-## Checklist mínimo para entrega
+## Musica de fundo (opcional)
 
-- Preencher este README com nome final, descrição real, regras e controles do jogo.
-- Atualizar `docs/proposta.MD` com a proposta do grupo.
-- Garantir que o jogo executa com `python main.py`.
-- Garantir que os testes passam com `pytest`.
+O jogo procura por um arquivo de musica em `assets/sons/musica.ogg` e toca em loop se
+estiver presente. Caso o arquivo nao exista, o jogo roda normalmente em silencio.
 
-## Observações para os alunos
+Para adicionar uma trilha, baixe um arquivo livre (sugestao: Kenney Assets, OpenGameArt
+ou itch.io) e salve como `assets/sons/musica.ogg`. Registre a origem e a licenca neste
+README.
 
-- Mantenham o código organizado em módulos pequenos e com responsabilidade clara.
-- Comentem partes importantes da lógica, principalmente regras do jogo.
-- Registrem decisões técnicas no README do grupo ao longo do desenvolvimento.
+## Creditos de assets
+
+Nenhum asset externo esta sendo usado nesta versao (graficos sao desenhados via
+`pygame.draw`, sem imagens; fonte de sistema padrao).
+
+Quando um asset externo for incluido, registrar aqui: nome, autor/site e licenca.

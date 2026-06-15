@@ -1,145 +1,186 @@
 import pygame
-import time
 import random
+
 from src.config import (
     LARGURA_TELA,
     ALTURA_TELA,
-    FPS,
     TITULO_JOGO,
-    CINZA,
     BRANCO,
     PRETO,
-    CAMINHO_RECORDE,
-    CAMINHO_SPRITES,
+    CAMINHO_RANKING,
+    CAMINHO_MUSICA,
+    TAMANHO_RANKING,
 )
-
-from src.funcoes import (
-    calcular_pontos,
-    jogador_perdeu,
-    limitar_valor,
-    verificar_colisao,
-    tomar_dano,
-)
-
-from src.sprites import pegar_sprite
 from src.dados import (
-    salvar_recorde,
-    carregar_recorde,
+    carregar_ranking,
+    salvar_ranking,
+    atualizar_ranking,
 )
+
+# Constantes especificas do Snake
+VELOCIDADE = 10        # quadros por segundo (velocidade da cobra)
+TAMANHO_BLOCO = 20     # tamanho em pixels de cada bloco
+VERDE = (0, 200, 0)
+VERMELHO = (255, 0, 0)
+
+
+def tocar_musica():
+    """Toca musica de fundo em loop se o arquivo existir; ignora se faltar."""
+    try:
+        pygame.mixer.music.load(CAMINHO_MUSICA)
+        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.play(-1)  # -1 = repete pra sempre
+    except pygame.error:
+        pass
+
+
+def sortear_comida():
+    """Sorteia uma posicao alinhada ao grid para a comida."""
+    x = random.randrange(0, LARGURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
+    y = random.randrange(0, ALTURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
+    return x, y
+
+
+def desenhar_hud(tela, fonte, pontos, tempo, recorde):
+    """Mostra pontos, tempo e recorde no topo da tela."""
+    texto = f"Pontos: {pontos}   Tempo: {tempo}s   Recorde: {recorde}"
+    tela.blit(fonte.render(texto, True, PRETO), (10, 10))
+
+
+def tela_game_over(tela, fonte, pontos, tempo, ranking):
+    """Mostra placar e top 5. Retorna True se o jogador quer reiniciar."""
+    tela.fill(BRANCO)
+    tela.blit(fonte.render("GAME OVER", True, VERMELHO),
+              (LARGURA_TELA // 2 - 70, 30))
+    tela.blit(fonte.render(f"Sua pontuacao: {pontos}    Tempo: {tempo}s", True, PRETO),
+              (LARGURA_TELA // 2 - 150, 70))
+    tela.blit(fonte.render("RANKING (TOP 5)", True, PRETO),
+              (LARGURA_TELA // 2 - 90, 120))
+
+    for i, (p, t) in enumerate(ranking):
+        linha = f"{i + 1}.   {p} pts   -   {t}s"
+        tela.blit(fonte.render(linha, True, PRETO),
+                  (LARGURA_TELA // 2 - 90, 155 + i * 28))
+
+    tela.blit(fonte.render("R = jogar de novo     ESC = sair", True, PRETO),
+              (LARGURA_TELA // 2 - 160, ALTURA_TELA - 30))
+    pygame.display.update()
+
+    # Espera o jogador decidir
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                return False
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_r:
+                    return True
+                if evento.key == pygame.K_ESCAPE:
+                    return False
+
+
+def partida(tela, fonte, relogio, recorde):
+    """Executa uma partida do Snake.
+    Retorna (pontos, tempo_em_segundos, fechou_janela)."""
+    # Posicao e direcao iniciais
+    x = LARGURA_TELA // 2
+    y = ALTURA_TELA // 2
+    dx, dy = 0, 0
+
+    cobra = []
+    comprimento = 1
+    comida_x, comida_y = sortear_comida()
+
+    inicio = pygame.time.get_ticks()
+    fim = False
+    fechou = False
+
+    while not fim:
+        # 1. Eventos: teclado e clique no X da janela
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                fim = True
+                fechou = True
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_LEFT and dx == 0:
+                    dx, dy = -TAMANHO_BLOCO, 0
+                elif evento.key == pygame.K_RIGHT and dx == 0:
+                    dx, dy = TAMANHO_BLOCO, 0
+                elif evento.key == pygame.K_UP and dy == 0:
+                    dx, dy = 0, -TAMANHO_BLOCO
+                elif evento.key == pygame.K_DOWN and dy == 0:
+                    dx, dy = 0, TAMANHO_BLOCO
+
+        if fechou:
+            break
+
+        # 2. Move a cabeca
+        x += dx
+        y += dy
+
+        # 3. Bateu na parede? Acaba o jogo
+        if x < 0 or x >= LARGURA_TELA or y < 0 or y >= ALTURA_TELA:
+            fim = True
+            continue
+
+        # 4. Atualiza a lista que representa o corpo
+        cabeca = [x, y]
+        cobra.append(cabeca)
+        if len(cobra) > comprimento:
+            del cobra[0]
+
+        # 5. Bateu em si mesma?
+        for bloco in cobra[:-1]:
+            if bloco == cabeca:
+                fim = True
+
+        # 6. Comeu a comida?
+        if x == comida_x and y == comida_y:
+            comida_x, comida_y = sortear_comida()
+            comprimento += 1
+
+        # 7. Desenha tudo
+        tela.fill(BRANCO)
+        pygame.draw.rect(tela, VERMELHO, [comida_x, comida_y, TAMANHO_BLOCO, TAMANHO_BLOCO])
+        for bloco in cobra:
+            pygame.draw.rect(tela, VERDE, [bloco[0], bloco[1], TAMANHO_BLOCO, TAMANHO_BLOCO])
+
+        pontos = comprimento - 1
+        tempo = (pygame.time.get_ticks() - inicio) // 1000
+        desenhar_hud(tela, fonte, pontos, tempo, recorde)
+
+        pygame.display.update()
+        relogio.tick(VELOCIDADE)
+
+    tempo_final = (pygame.time.get_ticks() - inicio) // 1000
+    return comprimento - 1, tempo_final, fechou
+
 
 def executar_jogo():
+    """Ponto de entrada chamado pelo main.py."""
     pygame.init()
+    pygame.mixer.init()
 
-    #Configuração da tela
-    largura = LARGURA_TELA
-    altura = ALTURA_TELA
-    tela = pygame.display.set_mode((largura, altura))
+    tela = pygame.display.set_mode((LARGURA_TELA, ALTURA_TELA))
     pygame.display.set_caption(TITULO_JOGO + " - Snakobra")
 
-    #Cores do jogo
-    BRANCO = (255, 255, 255)
-    VERDE = (0, 255, 0)
-    PRETO = (0, 0, 0)
-    VERMELHO = (255, 0, 0)
+    fonte = pygame.font.SysFont(None, 28)
+    relogio = pygame.time.Clock()
 
-    #Criação do relógio
-    clock = pygame.time.Clock()
-    velocidade = 10 #Quanto maior o número, maior a velocidade da cobrinha
+    tocar_musica()
 
-    #Tamanho do bloco(Cobra e comida)
-    tamanho_bloco = 20 #Quanto maior o número, maior o tamanho da cobrinha e da comida
+    continuar = True
+    while continuar:
+        ranking = carregar_ranking(CAMINHO_RANKING)
+        recorde = ranking[0][0] if ranking else 0
 
-    #Fonte
-    fonte = pygame.font.SysFont(None, 35)
+        pontos, tempo, fechou = partida(tela, fonte, relogio, recorde)
 
-    #Função para mostrar a pontuação na tela
-    def mostrar_pontuacao(pontos):
-        valor = fonte.render("Pontuação: " + str(pontos), True, PRETO)
-        tela.blit(valor, [10, 10]) #Exibe o valor no ponto superior esquerdo da tela
+        if fechou:
+            break
 
-    #Função principal
-    def jogo():
-        #Definir a posição inicial da cobrinha
-        x = largura // 2
-        y = altura // 2
-        x_mudanca = 0
-        y_mudanca = 0
+        ranking = atualizar_ranking(ranking, pontos, tempo, TAMANHO_RANKING)
+        salvar_ranking(CAMINHO_RANKING, ranking)
 
-        cobra = []
-        comprimento_cobra = 1
+        continuar = tela_game_over(tela, fonte, pontos, tempo, ranking)
 
-        #Gerar aleatória para a comida
-        comida_x = round(random.randrange(0, largura - tamanho_bloco) / 20) * 20
-        comida_y = round(random.randrange(0, altura - tamanho_bloco) / 20) * 20
-
-        fim_de_jogo = False #Controla se o jogo termina ou não
-
-        while not fim_de_jogo:
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    fim_de_jogo = True
-                if evento.type == pygame.KEYDOWN:
-                    if evento.key == pygame.K_LEFT and x_mudanca != tamanho_bloco:
-                        x_mudanca = -tamanho_bloco
-                        y_mudanca = 0
-                    elif evento.key == pygame.K_RIGHT and x_mudanca != -tamanho_bloco:
-                        x_mudanca = tamanho_bloco
-                        y_mudanca = 0
-                    elif evento.key == pygame.K_UP and y_mudanca != tamanho_bloco:
-                        y_mudanca = -tamanho_bloco
-                        x_mudanca = 0
-                    elif evento.key == pygame.K_DOWN and y_mudanca != -tamanho_bloco:
-                        y_mudanca = tamanho_bloco
-                        x_mudanca = 0
-
-            #Atualizar a posição da cobrinha
-            x += x_mudanca
-            y += y_mudanca
-
-            #Verificar se a cobra bateu na borda
-            if x >= largura or x < 0 or y >= altura or y < 0:
-                fim_de_jogo = True
-
-            tela.fill(BRANCO) #Limpa a tela com a cor branca
-
-            pygame.draw.rect(tela, VERMELHO, [comida_x, comida_y, tamanho_bloco, tamanho_bloco]) #Define a cor, e no X/Y o tamanho do bloco
-
-            cabeca = [] #Lista para armazenar a posição da cabeça da cobra
-            cabeca.append(x)
-            cabeca.append(y)
-            cobra.append(cabeca) #Adiciona a posição da cabeça da cobra à lista da cobra da linha 68
-
-            if len(cobra) > comprimento_cobra:
-                del cobra[0] #Remove a cauda da cobra para que ela se mova
-
-            #Verifica se a cobra bateu nela mesma
-            for bloco in cobra[:-1]: #Verifica se a cabeça da cobra bateu com algum bloco do corpo, exceto a cabeça (último bloco)
-                if bloco == cabeca:
-                    fim_de_jogo = True
-
-            #Desenha todos os blocos da cobra
-            for bloco in cobra:
-                pygame.draw.rect(tela, VERDE, [bloco[0], bloco[1], tamanho_bloco, tamanho_bloco])
-
-            #Mostrar a pontuação
-            mostrar_pontuacao(comprimento_cobra - 1) #A pontuação é o comprimento da cobra menos 1, pq a cobra começa com comprimento == 1
-
-            pygame.display.update() #Atualiza a tela
-
-            #Verifica se a cobra comeu a comida
-            if x == comida_x and y == comida_y:
-                comida_x = round(random.randrange(0, largura - tamanho_bloco) / 20) * 20
-                comida_y = round(random.randrange(0, altura - tamanho_bloco) / 20) * 20
-                comprimento_cobra += 1 #Aumenta o comprimento da cobra quando ela come a comida
-
-            clock.tick(velocidade) #Controla a velocidade do jogo
-
-        #Quando o jogo terminar
-        tela.fill(BRANCO)
-        mensagem = fonte.render("Game Over! PONTUAÇÃO: " + str(comprimento_cobra - 1), True, VERMELHO)
-        tela.blit(mensagem, [largura // 2 - 150, altura // 2 - 50]) #Exibe a mensagem de Game Over no centro da tela
-        pygame.display.update()
-        pygame.time.delay(2000)
-        pygame.quit()
-
-    jogo()
+    pygame.quit()

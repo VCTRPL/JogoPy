@@ -1,4 +1,5 @@
 from src.funcoes import calcular_pontos, jogador_perdeu, limitar_valor
+from src.dados import atualizar_ranking
 
 
 def test_calcular_pontos():
@@ -29,3 +30,25 @@ def test_limitar_valor_acima_do_maximo():
 def test_limitar_valor_dentro_do_intervalo():
     """Deve manter o valor original quando ele ja estiver no intervalo."""
     assert limitar_valor(50, 0, 100) == 50
+
+
+def test_ranking_insere_e_ordena_por_pontos():
+    """Maior pontuacao deve aparecer no topo do ranking."""
+    ranking = [(10, 5), (8, 7)]
+    novo = atualizar_ranking(ranking, 15, 4, limite=5)
+    assert novo[0] == (15, 4)
+
+
+def test_ranking_respeita_limite():
+    """Quando o ranking ja esta cheio, scores menores nao devem entrar."""
+    ranking = [(50, 10), (40, 8), (30, 5), (20, 3), (10, 2)]
+    novo = atualizar_ranking(ranking, 5, 1, limite=5)
+    assert len(novo) == 5
+    assert (5, 1) not in novo
+
+
+def test_ranking_desempata_pelo_menor_tempo():
+    """Mesma pontuacao: quem fez em menos tempo vem na frente."""
+    ranking = [(20, 30)]
+    novo = atualizar_ranking(ranking, 20, 15, limite=5)
+    assert novo[0] == (20, 15)
