@@ -133,7 +133,7 @@ def partida(tela, fonte, relogio, recorde):
         y += dy
 
         # 3. Bateu na parede? Acaba o jogo
-        if x < 0 or x >= LARGURA_TELA or y < 0 or y >= ALTURA_TELA:
+        if x < 0 or x >= LARGURA_TELA or y < ALTURA_HUD or y >= ALTURA_TELA:
             fim = True
             continue
 
