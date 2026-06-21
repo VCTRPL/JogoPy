@@ -1,13 +1,24 @@
 # Dados
 
-Esta pasta guarda arquivos de persistencia simples em texto.
+Esta pasta guarda arquivos de persistência simples em texto.
 
 ## Arquivos
 
-- `recorde.txt`: melhor pontuacao registrada.
-- `ranking.txt`: base para ranking de jogadores (opcional neste template).
-- `README.txt`: arquivo legado; manter por compatibilidade se necessario.
+- `ranking.txt`: armazena as 5 melhores partidas no formato `pontos;tempo` por linha,
+  ordenadas da maior para a menor pontuação. Criado automaticamente ao final da primeira
+  partida.
 
-## Observacao
+## Formato do ranking.txt
 
-Evite versionar dados pessoais reais dos jogadores.
+```
+34;96
+8;23
+6;17
+```
+
+Cada linha representa uma entrada: pontuação e tempo em segundos separados por `;`.
+
+## Observação
+
+Evite editar o arquivo manualmente. Se o arquivo estiver corrompido (formato incorreto),
+apague-o — o jogo criará um novo automaticamente.
