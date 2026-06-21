@@ -20,6 +20,7 @@ from src.dados import (
 # Constantes especificas do Snake
 VELOCIDADE = 10        # quadros por segundo (velocidade da cobra)
 TAMANHO_BLOCO = 20     # tamanho em pixels de cada bloco
+ALTURA_HUD = 40        # faixa do topo reservada para pontos/tempo/recorde
 VERDE = (0, 200, 0)
 VERDE_ESCURO_COBRA = (0, 140, 0)    # borda da cobra para contraste com o campo
 VERMELHO = (255, 0, 0)
@@ -34,7 +35,7 @@ def tocar_musica():
         pygame.mixer.music.load(CAMINHO_MUSICA)
         pygame.mixer.music.set_volume(0.3)
         pygame.mixer.music.play(-1)  # -1 = repete pra sempre
-    except pygame.error:
+    except (pygame.error, FileNotFoundError):
         pass
 
 
@@ -48,7 +49,7 @@ def desenhar_campo(tela):
 
 
 def sortear_comida():
-    """Sorteia uma posicao alinhada ao grid para a comida (abaixo do HUD)."""
+    """Sorteia uma posicao alinhada ao grid para a comida."""
     x = random.randrange(0, LARGURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
     y = random.randrange(ALTURA_HUD, ALTURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
     return x, y
@@ -131,8 +132,8 @@ def partida(tela, fonte, relogio, recorde):
         x += dx
         y += dy
 
-        # 3. Bateu na parede ou no limite do HUD? Acaba o jogo
-        if x < 0 or x >= LARGURA_TELA or y < ALTURA_HUD or y >= ALTURA_TELA:
+        # 3. Bateu na parede? Acaba o jogo
+        if x < 0 or x >= LARGURA_TELA or y < 0 or y >= ALTURA_TELA:
             fim = True
             continue
 
@@ -163,6 +164,8 @@ def partida(tela, fonte, relogio, recorde):
         pontos = comprimento - 1
         tempo = (pygame.time.get_ticks() - inicio) // 1000
         desenhar_hud(tela, fonte, pontos, tempo, recorde)
+        # Linha separando a HUD da area de jogo
+        pygame.draw.line(tela, PRETO, (0, ALTURA_HUD), (LARGURA_TELA, ALTURA_HUD), 1)
 
         pygame.display.update()
         relogio.tick(VELOCIDADE)
