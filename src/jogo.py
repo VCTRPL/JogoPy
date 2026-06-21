@@ -21,7 +21,11 @@ from src.dados import (
 VELOCIDADE = 10        # quadros por segundo (velocidade da cobra)
 TAMANHO_BLOCO = 20     # tamanho em pixels de cada bloco
 VERDE = (0, 200, 0)
+VERDE_ESCURO_COBRA = (0, 140, 0)    # borda da cobra para contraste com o campo
 VERMELHO = (255, 0, 0)
+ALTURA_HUD = 40        # altura reservada para o HUD (cobra e fruta ficam abaixo)
+CAMPO_VERDE_CLARO = (170, 215, 81)  # quadrados claros do tabuleiro
+CAMPO_VERDE_ESCURO = (145, 195, 60) # quadrados escuros do tabuleiro
 
 
 def tocar_musica():
@@ -34,10 +38,19 @@ def tocar_musica():
         pass
 
 
+def desenhar_campo(tela):
+    """Desenha o tabuleiro quadriculado alternando dois tons de verde."""
+    for linha in range(ALTURA_HUD, ALTURA_TELA, TAMANHO_BLOCO):
+        for col in range(0, LARGURA_TELA, TAMANHO_BLOCO):
+            indice = (linha // TAMANHO_BLOCO) + (col // TAMANHO_BLOCO)
+            cor = CAMPO_VERDE_CLARO if indice % 2 == 0 else CAMPO_VERDE_ESCURO
+            pygame.draw.rect(tela, cor, (col, linha, TAMANHO_BLOCO, TAMANHO_BLOCO))
+
+
 def sortear_comida():
-    """Sorteia uma posicao alinhada ao grid para a comida."""
+    """Sorteia uma posicao alinhada ao grid para a comida (abaixo do HUD)."""
     x = random.randrange(0, LARGURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
-    y = random.randrange(0, ALTURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
+    y = random.randrange(ALTURA_HUD, ALTURA_TELA - TAMANHO_BLOCO, TAMANHO_BLOCO)
     return x, y
 
 
@@ -45,6 +58,7 @@ def desenhar_hud(tela, fonte, pontos, tempo, recorde):
     """Mostra pontos, tempo e recorde no topo da tela."""
     texto = f"Pontos: {pontos}   Tempo: {tempo}s   Recorde: {recorde}"
     tela.blit(fonte.render(texto, True, PRETO), (10, 10))
+    pygame.draw.line(tela, PRETO, (0, ALTURA_HUD), (LARGURA_TELA, ALTURA_HUD), 2)
 
 
 def tela_game_over(tela, fonte, pontos, tempo, ranking):
@@ -83,7 +97,7 @@ def partida(tela, fonte, relogio, recorde):
     Retorna (pontos, tempo_em_segundos, fechou_janela)."""
     # Posicao e direcao iniciais
     x = LARGURA_TELA // 2
-    y = ALTURA_TELA // 2
+    y = ALTURA_HUD + (ALTURA_TELA - ALTURA_HUD) // 2
     dx, dy = 0, 0
 
     cobra = []
@@ -117,8 +131,8 @@ def partida(tela, fonte, relogio, recorde):
         x += dx
         y += dy
 
-        # 3. Bateu na parede? Acaba o jogo
-        if x < 0 or x >= LARGURA_TELA or y < 0 or y >= ALTURA_TELA:
+        # 3. Bateu na parede ou no limite do HUD? Acaba o jogo
+        if x < 0 or x >= LARGURA_TELA or y < ALTURA_HUD or y >= ALTURA_TELA:
             fim = True
             continue
 
@@ -140,9 +154,11 @@ def partida(tela, fonte, relogio, recorde):
 
         # 7. Desenha tudo
         tela.fill(BRANCO)
+        desenhar_campo(tela)
         pygame.draw.rect(tela, VERMELHO, [comida_x, comida_y, TAMANHO_BLOCO, TAMANHO_BLOCO])
         for bloco in cobra:
             pygame.draw.rect(tela, VERDE, [bloco[0], bloco[1], TAMANHO_BLOCO, TAMANHO_BLOCO])
+            pygame.draw.rect(tela, VERDE_ESCURO_COBRA, [bloco[0], bloco[1], TAMANHO_BLOCO, TAMANHO_BLOCO], 2)
 
         pontos = comprimento - 1
         tempo = (pygame.time.get_ticks() - inicio) // 1000
